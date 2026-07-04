@@ -23,6 +23,8 @@ export function cerrarSesion() {
 }
 
 export function sesionValida(): boolean {
+  // En desarrollo no pedimos contraseña para agilizar las pruebas.
+  if (process.env.NODE_ENV !== 'production') return true;
   const token = cookies().get(COOKIE)?.value;
   if (!token) return false;
   const [payload, firma] = token.split('.');
