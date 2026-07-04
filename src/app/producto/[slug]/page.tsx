@@ -2,19 +2,18 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import NextLink from 'next/link';
 import {
-  AspectRatio,
   Box,
   Button,
   Container,
   Heading,
-  Image,
   Link as ChakraLink,
   SimpleGrid,
   Text,
 } from '@chakra-ui/react';
 import { getProductoPorSlug } from '@/lib/supabase';
 import { linkWhatsApp, precioARS } from '@/lib/whatsapp';
-import { CATEGORIAS } from '@/lib/types';
+import { CATEGORIAS, imagenesProducto } from '@/lib/types';
+import ImageCarousel from '@/components/ImageCarousel';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,15 +53,7 @@ export default async function ProductoPage({ params }: Props) {
             overflow="hidden"
             boxShadow="0 10px 30px rgba(33,29,25,0.10)"
           >
-            <AspectRatio ratio={1}>
-              {p.imagen_url ? (
-                <Image src={p.imagen_url} alt={p.nombre} objectFit="cover" w="100%" h="100%" />
-              ) : (
-                <Box display="grid" placeItems="center" fontSize="72px" bg="bg.muted" color="fg.muted">
-                  🍴
-                </Box>
-              )}
-            </AspectRatio>
+            <ImageCarousel imagenes={imagenesProducto(p)} alt={p.nombre} ratio={1} tamano="detalle" />
           </Box>
 
           <Box>

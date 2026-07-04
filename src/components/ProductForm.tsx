@@ -6,14 +6,16 @@ import {
   Button,
   Checkbox,
   Field,
+  Image,
   Input,
   NativeSelect,
+  SimpleGrid,
   Stack,
   Text,
   Textarea,
 } from '@chakra-ui/react';
 import { guardarProducto } from '@/app/admin/actions';
-import { CATEGORIAS, Producto } from '@/lib/types';
+import { CATEGORIAS, imagenesProducto, Producto } from '@/lib/types';
 
 function BotonGuardar() {
   const { pending } = useFormStatus();
@@ -35,6 +37,7 @@ function BotonGuardar() {
 
 export default function ProductForm({ producto }: { producto?: Producto }) {
   const [state, action] = useFormState(guardarProducto, undefined);
+  const fotosExistentes = producto ? imagenesProducto(producto) : [];
 
   return (
     <form action={action}>
@@ -125,10 +128,63 @@ export default function ProductForm({ producto }: { producto?: Producto }) {
         </Field.Root>
 
         <Field.Root>
-          <Field.Label>
-            Foto {producto?.imagen_url ? '(subí una nueva solo si querés reemplazarla)' : ''}
-          </Field.Label>
-          <Input type="file" name="imagen" accept="image/*" p={1.5} bg="bg.panel" />
+          <Field.Label>Fotos (la primera es la principal)</Field.Label>
+
+          {fotosExistentes.length > 0 && (
+            <Stack gap={2} mb={3} w="100%">
+              <Text fontSize="sm" color="fg.muted">
+                Fotos actuales — destildá las que quieras quitar:
+              </Text>
+              <SimpleGrid columns={{ base: 3, sm: 4 }} gap={3}>
+                {fotosExistentes.map((url, idx) => (
+                  <Checkbox.Root
+                    key={url}
+                    name="imagenes_existentes"
+                    value={url}
+                    defaultChecked
+                    colorPalette="oliva"
+                  >
+                    <Checkbox.HiddenInput />
+                    <Stack gap={1} align="center">
+                      <Box position="relative" w="100%">
+                        <Image
+                          src={url}
+                          alt={`Foto ${idx + 1}`}
+                          w="100%"
+                          aspectRatio={1}
+                          objectFit="cover"
+                          rounded="md"
+                          borderWidth="1px"
+                          borderColor="border.muted"
+                        />
+                        {idx === 0 && (
+                          <Box
+                            position="absolute"
+                            top="4px"
+                            left="4px"
+                            fontSize="10px"
+                            fontWeight="bold"
+                            bg="terracota.solid"
+                            color="terracota.contrast"
+                            rounded="sm"
+                            px={1.5}
+                          >
+                            Principal
+                          </Box>
+                        )}
+                      </Box>
+                      <Checkbox.Control />
+                    </Stack>
+                  </Checkbox.Root>
+                ))}
+              </SimpleGrid>
+            </Stack>
+          )}
+
+          <Input type="file" name="imagenes" accept="image/*" multiple p={1.5} bg="bg.panel" />
+          <Field.HelperText>
+            Podés subir varias a la vez (hasta 8, máx. 4 MB cada una). Se agregan después de las actuales.
+          </Field.HelperText>
         </Field.Root>
 
         <Checkbox.Root name="destacado" value="on" defaultChecked={producto?.destacado} colorPalette="terracota">

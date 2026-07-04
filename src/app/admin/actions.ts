@@ -30,8 +30,9 @@ function slugify(s: string) {
     .replace(/(^-|-$)/g, '');
 }
 
-async function subirImagen(file: File): Promise<string | null> {
-  if (!file || file.size === 0) return null;
+const MAX_FOTOS = 8;
+
+async function subirImagen(file: File): Promise<string> {
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
   const path = `productos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const buf = Buffer.from(await file.arrayBuffer());
@@ -41,6 +42,12 @@ async function subirImagen(file: File): Promise<string | null> {
   if (error) throw new Error(`No se pudo subir la imagen: ${error.message}`);
   const { data } = supabaseAdmin().storage.from('imagenes').getPublicUrl(path);
   return data.publicUrl;
+}
+
+async function subirImagenes(files: File[]): Promise<string[]> {
+  const urls: string[] = [];
+  for (const f of files) urls.push(await subirImagen(f));
+  return urls;
 }
 
 function requiereSesion() {
@@ -58,21 +65,38 @@ export async function guardarProducto(_prev: { error?: string } | undefined, for
   const presentacion = String(formData.get('presentacion') || '').trim() || null;
   const destacado = formData.get('destacado') === 'on';
   const disponible = formData.get('disponible') === 'on';
-  const archivo = formData.get('imagen') as File | null;
+
+  // Fotos existentes que se conservan (en orden) + fotos nuevas a subir
+  const existentes = formData.getAll('imagenes_existentes').map(String).filter(Boolean);
+  const nuevos = formData
+    .getAll('imagenes')
+    .filter((v): v is File => v instanceof File && v.size > 0);
 
   if (!nombre || !categoria || !precio) {
     return { error: 'Nombre, categoría y precio son obligatorios.' };
   }
+  if (existentes.length + nuevos.length > MAX_FOTOS) {
+    return { error: `Máximo ${MAX_FOTOS} fotos por producto.` };
+  }
+  if (nuevos.some((f) => f.size > 4 * 1024 * 1024)) {
+    return { error: 'Cada imagen debe pesar como máximo 4 MB.' };
+  }
 
   try {
-    let imagen_url: string | null | undefined = undefined;
-    if (archivo && archivo.size > 0) {
-      if (archivo.size > 4 * 1024 * 1024) return { error: 'La imagen no puede superar 4 MB.' };
-      imagen_url = await subirImagen(archivo);
-    }
+    const subidas = await subirImagenes(nuevos);
+    const imagenes = [...existentes, ...subidas];
 
-    const base: Record<string, unknown> = { nombre, categoria, descripcion, precio, presentacion, destacado, disponible };
-    if (imagen_url !== undefined) base.imagen_url = imagen_url;
+    const base: Record<string, unknown> = {
+      nombre,
+      categoria,
+      descripcion,
+      precio,
+      presentacion,
+      destacado,
+      disponible,
+      imagenes,
+      imagen_url: imagenes[0] ?? null, // foto principal, para compatibilidad
+    };
 
     if (id) {
       const { error } = await supabaseAdmin().from('productos').update(base).eq('id', id);

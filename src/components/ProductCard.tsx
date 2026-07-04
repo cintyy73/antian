@@ -1,19 +1,12 @@
 import NextLink from 'next/link';
-import {
-  AspectRatio,
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Image,
-  Link as ChakraLink,
-  Text,
-} from '@chakra-ui/react';
-import { Producto } from '@/lib/types';
+import { Button, Flex, Heading, Link as ChakraLink, Text } from '@chakra-ui/react';
+import { imagenesProducto, Producto } from '@/lib/types';
 import { linkWhatsApp, precioARS } from '@/lib/whatsapp';
+import ImageCarousel from '@/components/ImageCarousel';
 
 export default function ProductCard({ p }: { p: Producto }) {
   const msg = `¡Hola ANTIAN! Quiero pedir: ${p.nombre}${p.presentacion ? ` (${p.presentacion})` : ''}`;
+  const fotos = imagenesProducto(p);
 
   return (
     <Flex
@@ -27,19 +20,7 @@ export default function ProductCard({ p }: { p: Producto }) {
       transition="transform 0.18s ease, box-shadow 0.18s ease"
       _hover={{ transform: 'translateY(-4px)', boxShadow: '0 14px 30px rgba(33,29,25,0.14)' }}
     >
-      <ChakraLink asChild display="block">
-        <NextLink href={`/producto/${p.slug}`}>
-          <AspectRatio ratio={4 / 3}>
-            {p.imagen_url ? (
-              <Image src={p.imagen_url} alt={p.nombre} objectFit="cover" w="100%" h="100%" />
-            ) : (
-              <Box display="grid" placeItems="center" fontSize="42px" bg="bg.muted" color="fg.muted">
-                🍴
-              </Box>
-            )}
-          </AspectRatio>
-        </NextLink>
-      </ChakraLink>
+      <ImageCarousel imagenes={fotos} alt={p.nombre} ratio={4 / 3} href={`/producto/${p.slug}`} />
 
       <Flex direction="column" gap={2} p={5} flex="1">
         {p.presentacion && (
