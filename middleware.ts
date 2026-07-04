@@ -29,7 +29,11 @@ export function middleware(req: NextRequest) {
 
   // 1) Protección del panel admin (la validación fina se hace en el layout,
   //    esto es la primera barrera).
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
+  if (
+    process.env.NODE_ENV === 'production' &&
+    pathname.startsWith('/admin') &&
+    !pathname.startsWith('/admin/login')
+  ) {
     const cookie = req.cookies.get('antian_admin')?.value;
     if (!cookie) {
       const url = req.nextUrl.clone();
